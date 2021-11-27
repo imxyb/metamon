@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -e
+
+CGO_ENABLE=0 GOOS=linux GOARCH=amd64 go build -o bin/linux/metamon || return
+CGO_ENABLED=0 GOOS=windows  GOARCH=amd64 go build -o bin/windows/metamon.exe || return
+go build -o bin/mac/metamon || return

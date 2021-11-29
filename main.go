@@ -86,7 +86,7 @@ func main() {
 			},
 		},
 		Before: func(context *cli.Context) error {
-			uri, _ := url.Parse("http://imxyb1:we327021@140.249.73.234:15008")
+			uri, _ := url.Parse("http://hme11:4525@113.108.88.253:23050")
 			req.SetClient(
 				&http.Client{
 					Transport: &http.Transport{

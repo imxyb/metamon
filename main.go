@@ -214,6 +214,7 @@ func battleProcess(total, wins *atomic.Int32, metamon Metamon) {
 			fmt.Println(err)
 			continue
 		}
+		time.Sleep(2 * time.Second)
 	}
 }
 

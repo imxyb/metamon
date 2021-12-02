@@ -22,6 +22,7 @@ import (
 
 var noTearErr = errors.New("体力耗尽")
 var noPayErr = errors.New("raca费用不足")
+var noNeedUpdateLevel = errors.New("升级物品不足/经验不足，尚未可以升级")
 
 var (
 	accessToken string
@@ -43,7 +44,7 @@ func (r *RoundTrip) RoundTrip(request *http.Request) (*http.Response, error) {
 	l.Lock()
 	proxy, _ := randutil.ChoiceString(proxys)
 	l.Unlock()
-	proxyUrl, _ := url.Parse(proxy)
+	proxyUrl, _ := url.Parse(fmt.Sprintf("http://%s", proxy))
 	r.base.Proxy = http.ProxyURL(proxyUrl)
 	return r.base.RoundTrip(request)
 }
@@ -238,7 +239,9 @@ func battleProcess(total, wins *atomic.Int32, metamon Metamon) {
 			}
 		}
 		if err = updateLevelByID(metamon.ID); err != nil {
-			fmt.Println(err)
+			if err != noNeedUpdateLevel {
+				fmt.Println(err)
+			}
 			continue
 		}
 		time.Sleep(2 * time.Second)
@@ -643,7 +646,7 @@ func updateLevelByID(nftID int) error {
 		fmt.Printf("metamon %d 升级\n", nftID)
 		return nil
 	}
-	return errors.New(fmt.Sprintf("metamon %d 尚未可以升级", nftID))
+	return noNeedUpdateLevel
 }
 
 func updateLevel() error {

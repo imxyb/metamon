@@ -1,9 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
-	"math/rand"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/imroc/req"
+	"github.com/jmcvetta/randutil"
 	"github.com/panjf2000/ants/v2"
 	"github.com/urfave/cli/v2"
 	"go.uber.org/atomic"
@@ -27,21 +29,26 @@ var (
 	poolNum     = 5
 )
 
-func init() {
-	rand.Seed(time.Now().Unix())
+var (
+	proxys []string
+	l      sync.Mutex
+	ready  chan bool
+)
+
+type RoundTrip struct {
+	base http.Transport
 }
 
-type Pr struct {
-	IP        string `json:"ip"`
-	Country   string `json:"country"`
-	Area      string `json:"area"`
-	Province  string `json:"province"`
-	City      string `json:"city"`
-	Isp       string `json:"isp"`
-	Timestamp int    `json:"timestamp"`
+func (r *RoundTrip) RoundTrip(request *http.Request) (*http.Response, error) {
+	l.Lock()
+	proxy, _ := randutil.ChoiceString(proxys)
+	l.Unlock()
+	proxyUrl, _ := url.Parse(proxy)
+	r.base.Proxy = http.ProxyURL(proxyUrl)
+	return r.base.RoundTrip(request)
 }
 
-type ProxyResult struct {
+type PYResult struct {
 	Code int `json:"code"`
 	Data []struct {
 		IP         string `json:"ip"`
@@ -52,20 +59,41 @@ type ProxyResult struct {
 	Success bool   `json:"success"`
 }
 
-type RoundTrip struct {
-	base http.Transport
-	pr   ProxyResult
-}
-
-func (r *RoundTrip) RoundTrip(request *http.Request) (*http.Response, error) {
-	r.base.Proxy = http.ProxyURL(
-		&url.URL{
-			Scheme: "http",
-			User:   url.UserPassword("imxyb1", "we3727021"),
-			Host:   "140.249.73.234:15008",
-		},
-	)
-	return r.base.RoundTrip(request)
+func switchProxy() {
+	for {
+		l.Lock()
+		proxys = nil
+		resp, err := http.Get(
+			"http://tiqu.pyhttp.taolop.com/getip?count=54&neek=14284&type=2&yys=0&port=1&sb=&mr=1&sep=0&ts=1&pack=9529",
+		)
+		if err != nil {
+			l.Unlock()
+			fmt.Println(err)
+			continue
+		}
+		b, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			l.Unlock()
+			fmt.Println(err)
+			continue
+		}
+		var pyresult PYResult
+		if err = json.Unmarshal(b, &pyresult); err != nil {
+			l.Unlock()
+			fmt.Println(err)
+			continue
+		}
+		if pyresult.Code != 0 {
+			l.Unlock()
+			fmt.Printf("pin yin code:%d", pyresult.Code)
+			continue
+		}
+		for _, res := range pyresult.Data {
+			proxys = append(proxys, fmt.Sprintf("%s:%d", res.IP, res.Port))
+		}
+		l.Unlock()
+		time.Sleep(60 * time.Second)
+	}
 }
 
 func main() {
@@ -86,12 +114,11 @@ func main() {
 			},
 		},
 		Before: func(context *cli.Context) error {
-			uri, _ := url.Parse("http://hme11:4525@113.108.88.253:23050")
+			go switchProxy()
+
 			req.SetClient(
 				&http.Client{
-					Transport: &http.Transport{
-						Proxy: http.ProxyURL(uri),
-					},
+					Transport: &RoundTrip{},
 				},
 			)
 			fromAddress = context.String("address")

@@ -33,7 +33,8 @@ var (
 var (
 	proxys []string
 	l      sync.Mutex
-	ready  chan bool
+	ready  = make(chan bool)
+	once   sync.Once
 )
 
 type RoundTrip struct {
@@ -93,6 +94,9 @@ func switchProxy() {
 			proxys = append(proxys, fmt.Sprintf("%s:%d", res.IP, res.Port))
 		}
 		l.Unlock()
+		once.Do(func() {
+			close(ready)
+		})
 		time.Sleep(60 * time.Second)
 	}
 }
@@ -116,7 +120,7 @@ func main() {
 		},
 		Before: func(context *cli.Context) error {
 			go switchProxy()
-
+			<-ready
 			req.SetClient(
 				&http.Client{
 					Transport: &RoundTrip{},

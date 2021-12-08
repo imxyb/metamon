@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -197,21 +198,21 @@ var wg sync.WaitGroup
 
 func battleProcess(total, wins *atomic.Int32, metamon Metamon) {
 	defer wg.Done()
-	fmt.Printf("metamon %d 开始战斗\n", metamon.ID)
+	fmt.Printf("metamon %s 开始战斗\n", metamon.ID)
 	for {
 		bid, err := getBattleObject(metamon.ID, metamon.Level)
 		if err != nil {
-			fmt.Printf("metamon %d 获取对战对象失败\n", metamon)
+			fmt.Printf("metamon %s 获取对战对象失败\n", metamon.ID)
 			fmt.Println(err)
 			continue
 		}
 		win, err := battle(metamon.ID, bid, metamon.Level)
 		if err != nil {
 			if err == noTearErr {
-				fmt.Printf("metamon %d 没有体力\n", metamon.ID)
+				fmt.Printf("metamon %s 没有体力\n", metamon.ID)
 				break
 			}
-			fmt.Printf("metamon %d 没有成功开始战斗,重试\n", metamon.ID)
+			fmt.Printf("metamon %s 没有成功开始战斗,重试\n", metamon.ID)
 			fmt.Println(err)
 			continue
 		}
@@ -316,11 +317,11 @@ func start() {
 }
 
 type Metamon struct {
-	ID     int `json:"id"`
-	Level  int `json:"level"`
-	Exp    int `json:"exp"`
-	ExpMax int `json:"expMax"`
-	Tear   int `json:"tear"`
+	ID     string `json:"id"`
+	Level  int    `json:"level"`
+	Exp    int    `json:"exp"`
+	ExpMax int    `json:"expMax"`
+	Tear   int    `json:"tear"`
 }
 
 type GetAllMetaMonResult struct {
@@ -374,13 +375,13 @@ func getAvailMetaMon() ([]Metamon, error) {
 type BatterObjResult struct {
 	Data struct {
 		Objects []struct {
-			ID  int `json:"id"`
-			Sca int `json:"sca"`
+			ID  string `json:"id"`
+			Sca int    `json:"sca"`
 		}
 	}
 }
 
-func getBattleObject(metaID, level int) (int, error) {
+func getBattleObject(metaID string, level int) (int, error) {
 	api := "https://metamon-api.radiocaca.com/usm-api/getBattelObjects"
 	front := 1
 	if level >= 21 && level <= 40 {
@@ -408,7 +409,7 @@ func getBattleObject(metaID, level int) (int, error) {
 	m := make(map[int]int)
 	var scas []int
 	for _, object := range objs.Data.Objects {
-		m[object.Sca] = object.ID
+		m[object.Sca], _ = strconv.Atoi(object.ID)
 		scas = append(scas, object.Sca)
 	}
 	return m[scas[0]], err
@@ -430,7 +431,7 @@ type BatterResult struct {
 			CrgMax        int         `json:"crgMax"`
 			Exp           int         `json:"exp"`
 			ExpMax        int         `json:"expMax"`
-			ID            int         `json:"id"`
+			ID            string      `json:"id"`
 			ImageURL      string      `json:"imageUrl"`
 			Inte          int         `json:"inte"`
 			InteMax       int         `json:"inteMax"`
@@ -458,12 +459,12 @@ type BatterResult struct {
 			UpdateTime    string      `json:"updateTime"`
 			Years         int         `json:"years"`
 		} `json:"challengeMonster"`
-		ChallengeMonsterID int `json:"challengeMonsterId"`
+		ChallengeMonsterID string `json:"challengeMonsterId"`
 		ChallengeNft       struct {
 			ContractAddress string      `json:"contractAddress"`
 			CreatedAt       string      `json:"createdAt"`
 			Description     string      `json:"description"`
-			ID              int         `json:"id"`
+			ID              string      `json:"id"`
 			ImageURL        string      `json:"imageUrl"`
 			Level           interface{} `json:"level"`
 			Metadata        string      `json:"metadata"`
@@ -471,21 +472,21 @@ type BatterResult struct {
 			Owner           string      `json:"owner"`
 			Status          int         `json:"status"`
 			Symbol          string      `json:"symbol"`
-			TokenID         int         `json:"tokenId"`
+			TokenID         string      `json:"tokenId"`
 			UpdatedAt       string      `json:"updatedAt"`
 		} `json:"challengeNft"`
 		ChallengeOwner   string `json:"challengeOwner"`
 		ChallengeRecords []struct {
-			AttackType       int `json:"attackType"`
-			ChallengeID      int `json:"challengeId"`
-			DefenceType      int `json:"defenceType"`
-			ID               int `json:"id"`
-			MonsteraID       int `json:"monsteraId"`
-			MonsteraLife     int `json:"monsteraLife"`
-			MonsteraLifelost int `json:"monsteraLifelost"`
-			MonsterbID       int `json:"monsterbId"`
-			MonsterbLife     int `json:"monsterbLife"`
-			MonsterbLifelost int `json:"monsterbLifelost"`
+			AttackType       int    `json:"attackType"`
+			ChallengeID      string `json:"challengeId"`
+			DefenceType      int    `json:"defenceType"`
+			ID               string `json:"id"`
+			MonsteraID       string `json:"monsteraId"`
+			MonsteraLife     int    `json:"monsteraLife"`
+			MonsteraLifelost int    `json:"monsteraLifelost"`
+			MonsterbID       string `json:"monsterbId"`
+			MonsterbLife     int    `json:"monsterbLife"`
+			MonsterbLifelost int    `json:"monsterbLifelost"`
 		} `json:"challengeRecords"`
 		ChallengeResult   bool `json:"challengeResult"`
 		ChallengedMonster struct {
@@ -496,7 +497,7 @@ type BatterResult struct {
 			CrgMax        int         `json:"crgMax"`
 			Exp           int         `json:"exp"`
 			ExpMax        int         `json:"expMax"`
-			ID            int         `json:"id"`
+			ID            string      `json:"id"`
 			ImageURL      string      `json:"imageUrl"`
 			Inte          int         `json:"inte"`
 			InteMax       int         `json:"inteMax"`
@@ -524,12 +525,12 @@ type BatterResult struct {
 			UpdateTime    string      `json:"updateTime"`
 			Years         int         `json:"years"`
 		} `json:"challengedMonster"`
-		ChallengedMonsterID int `json:"challengedMonsterId"`
+		ChallengedMonsterID string `json:"challengedMonsterId"`
 		ChallengedNft       struct {
 			ContractAddress string      `json:"contractAddress"`
 			CreatedAt       string      `json:"createdAt"`
 			Description     string      `json:"description"`
-			ID              int         `json:"id"`
+			ID              string      `json:"id"`
 			ImageURL        string      `json:"imageUrl"`
 			Level           interface{} `json:"level"`
 			Metadata        string      `json:"metadata"`
@@ -537,12 +538,12 @@ type BatterResult struct {
 			Owner           string      `json:"owner"`
 			Status          int         `json:"status"`
 			Symbol          string      `json:"symbol"`
-			TokenID         int         `json:"tokenId"`
+			TokenID         string      `json:"tokenId"`
 			UpdatedAt       string      `json:"updatedAt"`
 		} `json:"challengedNft"`
 		ChallengedOwner string      `json:"challengedOwner"`
 		CreateTime      interface{} `json:"createTime"`
-		ID              int         `json:"id"`
+		ID              string      `json:"id"`
 		MonsterUpdate   bool        `json:"monsterUpdate"`
 		UpdateTime      interface{} `json:"updateTime"`
 	} `json:"data"`
@@ -551,7 +552,7 @@ type BatterResult struct {
 	Result    int    `json:"result"`
 }
 
-func battle(metaIDA, metaIDB, level int) (bool, error) {
+func battle(metaIDA string, metaIDB, level int) (bool, error) {
 	api := "https://metamon-api.radiocaca.com/usm-api/startBattle"
 
 	batterLevel := 1
@@ -578,7 +579,6 @@ func battle(metaIDA, metaIDB, level int) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	fmt.Println(result.Message)
 	if result.Result == 1 {
 		return result.Data.ChallengeResult, nil
 	}
@@ -592,8 +592,8 @@ func battle(metaIDA, metaIDB, level int) (bool, error) {
 }
 
 type BagItem struct {
-	Num int `json:"bpNum"`
-	Typ int `json:"bpType"`
+	Num string `json:"bpNum"`
+	Typ int    `json:"bpType"`
 }
 
 type Bag struct {
@@ -622,16 +622,16 @@ func checkBag() (int, int, error) {
 	)
 	for _, item := range bag.Data.Items {
 		if item.Typ == 1 {
-			pieceNum = item.Num
+			pieceNum, _ = strconv.Atoi(item.Num)
 		}
 		if item.Typ == 5 {
-			racaCoin = item.Num
+			racaCoin, _ = strconv.Atoi(item.Num)
 		}
 	}
 	return racaCoin, pieceNum, nil
 }
 
-func updateLevelByID(nftID int) error {
+func updateLevelByID(nftID string) error {
 	updateApi := "https://metamon-api.radiocaca.com/usm-api/updateMonster"
 	resp, err := req.Post(
 		updateApi, req.Param{
@@ -647,7 +647,7 @@ func updateLevelByID(nftID int) error {
 		return err
 	}
 	if result["result"].(float64) != -1 {
-		fmt.Printf("metamon %d 升级\n", nftID)
+		fmt.Printf("metamon %s 升级\n", nftID)
 		return nil
 	}
 	return noNeedUpdateLevel
@@ -670,25 +670,23 @@ func updateLevel() error {
 	}
 	hasUpdateLevel := false
 	for _, metamon := range rs.Data.MetamonList {
-		if metamon.Exp == metamon.ExpMax {
+		updateApi := "https://metamon-api.radiocaca.com/usm-api/updateMonster"
+		resp, err := req.Post(
+			updateApi, req.Param{
+				"address": fromAddress,
+				"nftId":   metamon.ID,
+			}, req.Header{"accesstoken": accessToken},
+		)
+		if err != nil {
+			return err
+		}
+		result := make(map[string]interface{})
+		if err = resp.ToJSON(&result); err != nil {
+			return err
+		}
+		if result["result"].(float64) != -1 {
 			hasUpdateLevel = true
-			updateApi := "https://metamon-api.radiocaca.com/usm-api/updateMonster"
-			resp, err := req.Post(
-				updateApi, req.Param{
-					"address": fromAddress,
-					"nftId":   metamon.ID,
-				}, req.Header{"accesstoken": accessToken},
-			)
-			if err != nil {
-				return err
-			}
-			result := make(map[string]interface{})
-			if err = resp.ToJSON(&result); err != nil {
-				return err
-			}
-			if result["result"].(float64) != -1 {
-				fmt.Printf("metamon %d 升级\n", metamon.ID)
-			}
+			fmt.Printf("metamon %s 升级\n", metamon.ID)
 		}
 	}
 	if !hasUpdateLevel {

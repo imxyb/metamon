@@ -95,9 +95,11 @@ func switchProxy() {
 			proxys = append(proxys, fmt.Sprintf("%s:%d", res.IP, res.Port))
 		}
 		l.Unlock()
-		once.Do(func() {
-			close(ready)
-		})
+		once.Do(
+			func() {
+				close(ready)
+			},
+		)
 		time.Sleep(60 * time.Second)
 	}
 }
@@ -121,7 +123,12 @@ func main() {
 		},
 		Before: func(context *cli.Context) error {
 			go switchProxy()
-			<-ready
+			select {
+			case <-ready:
+			case <-time.After(10 * time.Second):
+				panic("获取代理超时")
+				return nil
+			}
 			req.SetClient(
 				&http.Client{
 					Transport: &RoundTrip{},

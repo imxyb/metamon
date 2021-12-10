@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -419,6 +420,7 @@ func getBattleObject(metaID string, level int) (int, error) {
 		m[object.Sca], _ = strconv.Atoi(object.ID)
 		scas = append(scas, object.Sca)
 	}
+	sort.Ints(scas)
 	return m[scas[0]], err
 }
 

@@ -594,7 +594,7 @@ func battle(metaIDA string, metaIDB, level int) (bool, error) {
 	if strings.Contains(result.Message, "You didn't pay for the game") {
 		return false, noPayErr
 	}
-	if strings.Contains(result.Message, "Energy") {
+	if strings.Contains(result.Message, "energy") {
 		return false, noTearErr
 	}
 	return false, errors.New("unknown")

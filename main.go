@@ -62,6 +62,7 @@ type PYResult struct {
 }
 
 func switchProxy() {
+	return
 	for {
 		l.Lock()
 		proxys = nil
@@ -128,11 +129,11 @@ func main() {
 				panic("获取代理超时")
 				return nil
 			}
-			req.SetClient(
-				&http.Client{
-					Transport: &RoundTrip{},
-				},
-			)
+			// req.SetClient(
+			// 	&http.Client{
+			// 		Transport: &RoundTrip{},
+			// 	},
+			// )
 			fromAddress = context.String("address")
 			accessToken = context.String("token")
 			if context.IsSet("pool_num") {

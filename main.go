@@ -125,12 +125,12 @@ func main() {
 		},
 		Before: func(context *cli.Context) error {
 			go switchProxy()
-			select {
-			case <-ready:
-			case <-time.After(10 * time.Second):
-				panic("获取代理超时")
-				return nil
-			}
+			// select {
+			// case <-ready:
+			// case <-time.After(10 * time.Second):
+			// 	panic("获取代理超时")
+			// 	return nil
+			// }
 			// req.SetClient(
 			// 	&http.Client{
 			// 		Transport: &RoundTrip{},
